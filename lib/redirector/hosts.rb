@@ -8,7 +8,13 @@ module Redirector
       Redirector.path('data/transition-sites/*.yml')
     ]
 
-    def self.files(masks = MASKS)
+    attr_reader :masks
+
+    def initialize(masks = MASKS)
+      @masks = masks
+    end
+
+    def files
       files = Array(masks).inject([]) do |files, mask|
         files.concat(Dir[mask])
       end
@@ -20,8 +26,8 @@ module Redirector
 
     # This method iterates all the hosts for a specified site
     # according to its YAML.
-    def self.all(masks = MASKS)
-      files(masks).each do |filename|
+    def each
+      files.each do |filename|
         site = Site.from_yaml(filename)
         site.all_hosts.each do |host|
           yield site, host
@@ -32,25 +38,25 @@ module Redirector
     # This is so that the first part of the validates! method can
     # check if there are multiple site abbreviations and
     # therefore duplicates.
-    def self.hosts_to_site_abbrs(masks = MASKS)
+    def hosts_to_site_abbrs
       # Default entries in the hash to empty array
       # http://stackoverflow.com/a/2552946/3726525
-      hosts_to_site_abbrs = Hash.new { |hash, key| hash[key] = [] }
-
-      Hosts.all(masks) do |site, host|
-        hosts_to_site_abbrs[host] << site.abbr
+      Hash.new { |hash, key| hash[key] = [] }.tap do |hosts_to_site_abbrs|
+        each do |site, host|
+          hosts_to_site_abbrs[host] << site.abbr
+        end
       end
-
-      hosts_to_site_abbrs
     end
 
-    def self.validate!(masks = MASKS)
-      duplicates = {}
+    def validate!
+      duplicates     = {}
       has_uppercase  = Set.new
-      hosts_to_site_abbrs(masks).each do |host, abbrs|
+
+      hosts_to_site_abbrs.each do |host, abbrs|
         duplicates[host] = abbrs if abbrs.size > 1
         has_uppercase << host unless host == host.downcase
       end
+
       raise Redirector::DuplicateHostsException.new(duplicates) if duplicates.any?
       raise Redirector::UppercaseHostsException.new(has_uppercase) if has_uppercase.any?
     end
