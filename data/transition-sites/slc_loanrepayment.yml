@@ -4,5 +4,6 @@ whitehall_slug: student-loans-company
 homepage: https://www.gov.uk/government/organisations/repaying-your-student-loan
 tna_timestamp: 20180719091528
 host: www.studentloanrepayment.co.uk
+options: --query-string _pageid:_dad:_schema
 aliases:
 - studentloanrepayment.co.uk
